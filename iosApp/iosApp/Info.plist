@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>UIRequiresFullScreen</key>
+	<true/>
+	<key>UIStatusBarHidden</key>
+	<true/>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>The Trycorder viewer shows the camera and takes pictures of your away mission.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>The Trycorder listens to voice commands, shows the audio waveform and streams push-to-talk audio.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>The Trycorder recognizes commands such as "computer phaser".</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>The orientation sensor shows where you are on this planet.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>The galleries show the pictures and videos taken by the Trycorder.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>The Trycorder saves the pictures and videos it takes.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>The crew module reads and evaluates your crew (contacts).</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>The Trycorder talks to other Trycorders on the local network.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_trycorder._tcp</string>
+	</array>
+</dict>
+</plist>
