@@ -128,7 +128,12 @@ internal val GROUP_ROWS: Map<ButtonGroup, Pair<GroupStyle, List<GroupButton>>> =
 
 /** The row of buttons under the sensor area. Pure. */
 @Composable
-fun GroupRow(buttons: List<GroupButton>, style: GroupStyle, onIntent: (TrycorderIntent) -> Unit, modifier: Modifier = Modifier) {
+fun GroupRow(
+    buttons: List<GroupButton>,
+    style: GroupStyle,
+    onIntent: (TrycorderIntent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier.fillMaxSize().background(TrekPalette.Background),
         verticalAlignment = Alignment.CenterVertically,

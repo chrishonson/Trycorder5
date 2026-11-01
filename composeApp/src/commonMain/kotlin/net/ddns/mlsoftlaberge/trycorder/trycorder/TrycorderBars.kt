@@ -112,7 +112,12 @@ data class SideButton(val text: String, val color: TrekColor, val group: ButtonG
 
 /** The left column of group buttons with the spacing weights of the original layout. */
 @Composable
-fun SideColumn(buttons: List<SideButton>, lastGap: Float, onSelect: (ButtonGroup) -> Unit, modifier: Modifier = Modifier) {
+fun SideColumn(
+    buttons: List<SideButton>,
+    lastGap: Float,
+    onSelect: (ButtonGroup) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier = modifier.fillMaxHeight().background(TrekPalette.Background)) {
         buttons.forEach { b ->
             Spacer(Modifier.weight(b.gapBefore))

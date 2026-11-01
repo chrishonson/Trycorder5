@@ -38,6 +38,7 @@ import org.jetbrains.compose.resources.painterResource
 
 private val WalkieButtonHeight = 32.dp
 private const val CHAT_SMALL_SP = 16
+private const val PEERS_SP = 18
 private const val CHAT_LOG_WEIGHT = 4f
 private const val INPUT_WEIGHT = 8f
 private const val SEND_WEIGHT = 2f
@@ -46,24 +47,46 @@ private const val TALK_WEIGHT = 2f
 /** The sensor area of the main screen: one page at a time. */
 @Composable
 fun SensorArea(state: TrycorderState, onIntent: (TrycorderIntent) -> Unit, modifier: Modifier = Modifier) {
-    val r = state.readings
-    val running = state.activeSensor == state.sensorPage
     val full = modifier.fillMaxSize()
     when (state.sensorPage) {
         SensorPage.EarthStill -> Image(painterResource(Res.drawable.earth_still), null, full)
         SensorPage.StartrekLogo -> Image(painterResource(Res.drawable.startrek_logo), null, full)
-        SensorPage.Magnetic -> MagneticPanel(r.magnetic, running, full)
-        SensorPage.Orientation -> OrientationPanel(r.orientation, r.location, running, { onIntent(TrycorderIntent.OpenMap) }, full)
-        SensorPage.Gravity -> GravityPanel(r.acceleration, running, full)
-        SensorPage.Temperature -> TemperaturePanel(r.environment, running, full)
-        SensorPage.AudioWave -> AudioPanel(r.audio, running, full)
-        SensorPage.Shields -> with(state.shield) { ShieldsPanel(state.shieldMode, freq, force, rotate, running, full) }
-        SensorPage.Fire -> FirePanel(state.fireMode, state.fireDirection, state.fireForce, state.fireShot, full)
-        SensorPage.Transporter -> TransporterPanel(state.transporterMode, state.transporterPosition, running, full)
-        SensorPage.Tractor -> with(state.tractor) { TractorPanel(state.tractorMode, freq, force, rotate, running, full) }
-        SensorPage.Motor -> MotorPanel(state.motorMode, running, full)
         SensorPage.Walkie -> WalkiePanel(state.peersText, onIntent, full)
         SensorPage.Chat -> ChatPanel(state.chatInput, state.chatLog, onIntent, full)
+        SensorPage.Magnetic, SensorPage.Orientation, SensorPage.Gravity,
+        SensorPage.Temperature, SensorPage.AudioWave,
+        -> ScanPanel(state, onIntent, full)
+        else -> AnimationPanel(state, full)
+    }
+}
+
+@Composable
+private fun ScanPanel(state: TrycorderState, onIntent: (TrycorderIntent) -> Unit, modifier: Modifier) {
+    val r = state.readings
+    val running = state.activeSensor == state.sensorPage
+    when (state.sensorPage) {
+        SensorPage.Magnetic -> MagneticPanel(r.magnetic, running, modifier)
+        SensorPage.Orientation ->
+            OrientationPanel(r.orientation, r.location, running, { onIntent(TrycorderIntent.OpenMap) }, modifier)
+        SensorPage.Gravity -> GravityPanel(r.acceleration, running, modifier)
+        SensorPage.Temperature -> TemperaturePanel(r.environment, running, modifier)
+        else -> AudioPanel(r.audio, running, modifier)
+    }
+}
+
+@Composable
+private fun AnimationPanel(state: TrycorderState, modifier: Modifier) {
+    val running = state.activeSensor == state.sensorPage
+    when (state.sensorPage) {
+        SensorPage.Shields -> with(state.shield) {
+            ShieldsPanel(state.shieldMode, freq, force, rotate, running, modifier)
+        }
+        SensorPage.Fire -> FirePanel(state.fireMode, state.fireDirection, state.fireForce, state.fireShot, modifier)
+        SensorPage.Transporter -> TransporterPanel(state.transporterMode, state.transporterPosition, running, modifier)
+        SensorPage.Tractor -> with(state.tractor) {
+            TractorPanel(state.tractorMode, freq, force, rotate, running, modifier)
+        }
+        else -> MotorPanel(state.motorMode, running, modifier)
     }
 }
 
@@ -77,12 +100,19 @@ fun WalkiePanel(peers: String, onIntent: (TrycorderIntent) -> Unit, modifier: Mo
             WalkieButton("CMD", TrekColor.Green, 1f) { onIntent(TrycorderIntent.CommandWindow) }
         }
         Row(Modifier.fillMaxWidth()) {
-            WalkieButton("LIST", TrekColor.Indigo, 1f) { onIntent(TrycorderIntent.Command(TrekCommand.SpeakList)) }
+            WalkieButton("LIST", TrekColor.Indigo, 1f) {
+                onIntent(TrycorderIntent.Command(TrekCommand.SpeakList))
+            }
             WalkieButton("Srv-On", TrekColor.Orange, 1f) { onIntent(TrycorderIntent.ServerOn) }
             WalkieButton("Srv-Off", TrekColor.Orange, 1f) { onIntent(TrycorderIntent.ServerOff) }
-            WalkieButton("LOGS", TrekColor.Green, 1f) { onIntent(TrycorderIntent.Command(TrekCommand.LogsConsole)) }
+            WalkieButton("LOGS", TrekColor.Green, 1f) {
+                onIntent(TrycorderIntent.Command(TrekCommand.LogsConsole))
+            }
         }
-        TrekLog(peers, TrekPalette.HoloGreenLight, Modifier.fillMaxWidth(), font = TrekFont.Action, bold = false, fontSize = 18)
+        TrekLog(
+            peers, TrekPalette.HoloGreenLight, Modifier.fillMaxWidth(),
+            font = TrekFont.Action, bold = false, fontSize = PEERS_SP,
+        )
     }
 }
 
@@ -128,7 +158,10 @@ fun ChatPanel(input: String, log: String, onIntent: (TrycorderIntent) -> Unit, m
         }
         Row(Modifier.fillMaxWidth().weight(1f)) {
             TrekInput(input, { onIntent(TrycorderIntent.ChatInput(it)) }, Modifier.weight(INPUT_WEIGHT).fillMaxSize())
-            TrekButton("Send", TrekColor.Green, { onIntent(TrycorderIntent.ChatSend) }, Modifier.weight(SEND_WEIGHT).fillMaxSize())
+            TrekButton(
+                "Send", TrekColor.Green, { onIntent(TrycorderIntent.ChatSend) },
+                Modifier.weight(SEND_WEIGHT).fillMaxSize(),
+            )
         }
         TrekLog(
             text = log.ifEmpty { "Chat messages" },
@@ -144,8 +177,11 @@ fun ChatPanel(input: String, log: String, onIntent: (TrycorderIntent) -> Unit, m
 private fun androidx.compose.foundation.layout.RowScope.ChatButton(
     text: String,
     color: TrekColor,
-    size: Int = 18,
+    size: Int = PEERS_SP,
     onClick: () -> Unit,
 ) {
-    TrekButton(text, color, onClick, Modifier.weight(1f).fillMaxSize(), font = TrekFont.Default, bold = false, fontSize = size.sp)
+    TrekButton(
+        text, color, onClick, Modifier.weight(1f).fillMaxSize(),
+        font = TrekFont.Default, bold = false, fontSize = size.sp,
+    )
 }

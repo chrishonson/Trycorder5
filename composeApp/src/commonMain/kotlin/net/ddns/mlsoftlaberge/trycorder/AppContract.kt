@@ -21,7 +21,8 @@ enum class Screen(val modeNumber: Int) {
     val isMode: Boolean get() = modeNumber > 0
 
     companion object {
-        fun fromModeNumber(number: Int): Screen = entries.firstOrNull { it.isMode && it.modeNumber == number } ?: Trycorder
+        fun fromModeNumber(number: Int): Screen =
+            entries.firstOrNull { it.isMode && it.modeNumber == number } ?: Trycorder
     }
 }
 

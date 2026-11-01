@@ -89,19 +89,30 @@ fun ViewerArea(
         )
         ViewerPage.Camera -> CameraViewer(camera, state.viewerFront, full)
         ViewerPage.LogsConsole -> TrekLog(state.consoleLog, TrekPalette.HoloGreenLight, full, font = TrekFont.Button)
-        ViewerPage.LogsInfo, ViewerPage.SystemInfo -> TrekLog(state.infoText, TrekPalette.Text, full, font = TrekFont.Button)
+        ViewerPage.LogsInfo, ViewerPage.SystemInfo ->
+            TrekLog(state.infoText, TrekPalette.Text, full, font = TrekFont.Button)
         ViewerPage.Plans -> PlansPage(state.planIndex, { onIntent(TrycorderIntent.NextPlan) }, full)
         ViewerPage.Photo -> PhotoPage(state.picture.bytes, state.picture.faces, full)
         ViewerPage.Animate -> MotorViewer(state.motorAnimation, full)
         ViewerPage.SpeakList -> TrekLog(VoiceCommands.SPEAK_LIST, TrekPalette.Text, full)
         ViewerPage.LogsStat -> MemoryStatPanel(state.readings.memory, full)
-        ViewerPage.ModeWindow -> ModeWindow(onIntent, full)
+        else -> ControlWindow(state, onIntent, full)
+    }
+}
+
+@Composable
+private fun ControlWindow(state: TrycorderState, onIntent: (TrycorderIntent) -> Unit, modifier: Modifier) {
+    when (state.viewerPage) {
         ViewerPage.TransporterSeek -> TransporterWindow(
-            state.transporterSliders.map { it.progress }, state.transporterTextUp, state.transporterTextDown, onIntent, full,
+            state.transporterSliders.map { it.progress }, state.transporterTextUp, state.transporterTextDown,
+            onIntent, modifier,
         )
-        ViewerPage.FireControl -> FireControlWindow(state.fireDirection, state.fireForce, onIntent, full)
-        ViewerPage.TractorBeam -> with(state.beamControls) { TractorBeamWindow(rotate, freq, force, onIntent, full) }
-        ViewerPage.CommandControl -> CommandWindow(state.commandLog, state.commandInput, onIntent, full)
+        ViewerPage.FireControl -> FireControlWindow(state.fireDirection, state.fireForce, onIntent, modifier)
+        ViewerPage.TractorBeam -> with(state.beamControls) {
+            TractorBeamWindow(rotate, freq, force, onIntent, modifier)
+        }
+        ViewerPage.CommandControl -> CommandWindow(state.commandLog, state.commandInput, onIntent, modifier)
+        else -> ModeWindow(onIntent, modifier)
     }
 }
 
@@ -136,13 +147,25 @@ private object PlanAnimation {
     private const val BLINK_MS = 600
     private const val ROTATE_BACK_MS = 5000
 
-    suspend fun run(index: Int, rotation: Animatable<Float, *>, alpha: Animatable<Float, *>, scaleY: Animatable<Float, *>) {
+    private const val VIEW = 0
+    private const val BUILD = 1
+    private const val PLAN = 2
+    private const val TOP_VIEW = 4
+    private const val EARTH = 5
+    private const val UNIVERSE = 6
+
+    suspend fun run(
+        index: Int,
+        rotation: Animatable<Float, *>,
+        alpha: Animatable<Float, *>,
+        scaleY: Animatable<Float, *>,
+    ) {
         when (index) {
-            0 -> rotation.animateTo(TURN, tween(CLOCKWISE_MS))
-            1 -> alpha.snapTo(0f).also { alpha.animateTo(1f, tween(FADE_MS)) }
-            2, 6 -> scaleY.snapTo(0f).also { scaleY.animateTo(1f, tween(SLIDE_MS, easing = LinearEasing)) }
-            4 -> alpha.animateTo(0f, infiniteRepeatable(tween(BLINK_MS), RepeatMode.Reverse))
-            5 -> {
+            VIEW -> rotation.animateTo(TURN, tween(CLOCKWISE_MS))
+            BUILD -> alpha.snapTo(0f).also { alpha.animateTo(1f, tween(FADE_MS)) }
+            PLAN, UNIVERSE -> scaleY.snapTo(0f).also { scaleY.animateTo(1f, tween(SLIDE_MS, easing = LinearEasing)) }
+            TOP_VIEW -> alpha.animateTo(0f, infiniteRepeatable(tween(BLINK_MS), RepeatMode.Reverse))
+            EARTH -> {
                 rotation.animateTo(TURN, tween(ROTATE_BACK_MS))
                 rotation.animateTo(0f, tween(ROTATE_BACK_MS))
             }
@@ -154,7 +177,9 @@ private object PlanAnimation {
 /** The snapped picture with red circles around heads and blue circles around eyes. */
 @Composable
 fun PhotoPage(bytes: ByteArray?, faces: List<Face>, modifier: Modifier = Modifier) {
-    val bitmap: ImageBitmap? = remember(bytes) { bytes?.let { runCatching { it.decodeToImageBitmap() }.getOrNull() } }
+    val bitmap: ImageBitmap? = remember(bytes) {
+        bytes?.let { runCatching { it.decodeToImageBitmap() }.getOrNull() }
+    }
     if (bitmap == null) {
         Image(painterResource(Res.drawable.roddenberry_stillwell), null, modifier)
         return
@@ -277,13 +302,22 @@ fun FireControlWindow(direction: Int, force: Int, onIntent: (TrycorderIntent) ->
 
 /** Rotation, frequency and strength of the tractor beam (also used by the shields). */
 @Composable
-fun TractorBeamWindow(rotate: Boolean, freq: Int, force: Int, onIntent: (TrycorderIntent) -> Unit, modifier: Modifier = Modifier) {
+fun TractorBeamWindow(
+    rotate: Boolean,
+    freq: Int,
+    force: Int,
+    onIntent: (TrycorderIntent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
                 checked = rotate,
                 onCheckedChange = { onIntent(TrycorderIntent.BeamRotate(it)) },
-                colors = CheckboxDefaults.colors(uncheckedColor = TrekPalette.HoloGreenLight, checkedColor = TrekPalette.HoloGreenLight),
+                colors = CheckboxDefaults.colors(
+                    uncheckedColor = TrekPalette.HoloGreenLight,
+                    checkedColor = TrekPalette.HoloGreenLight,
+                ),
             )
             Text("Rotating Freq.", color = TrekPalette.HoloGreenLight)
         }
@@ -304,12 +338,18 @@ fun TractorBeamWindow(rotate: Boolean, freq: Int, force: Int, onIntent: (Trycord
 @Composable
 fun CommandWindow(log: String, input: String, onIntent: (TrycorderIntent) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier) {
-        TrekLog(log.ifEmpty { "Command log\n------------------\n" }, TrekPalette.Text, Modifier.weight(COMMAND_LOG_WEIGHT).fillMaxWidth())
+        TrekLog(
+            log.ifEmpty { "Command log\n------------------\n" }, TrekPalette.Text,
+            Modifier.weight(COMMAND_LOG_WEIGHT).fillMaxWidth(),
+        )
         TrekButton(
             "Send Command/Message", TrekColor.Green, { onIntent(TrycorderIntent.CommandSend) },
             Modifier.weight(COMMAND_BUTTON_WEIGHT).fillMaxWidth(), font = TrekFont.Default,
         )
-        TrekInput(input, { onIntent(TrycorderIntent.CommandInput(it)) }, Modifier.weight(COMMAND_INPUT_WEIGHT).fillMaxWidth(), singleLine = false)
+        TrekInput(
+            input, { onIntent(TrycorderIntent.CommandInput(it)) },
+            Modifier.weight(COMMAND_INPUT_WEIGHT).fillMaxWidth(), singleLine = false,
+        )
     }
 }
 
@@ -323,7 +363,12 @@ private fun Labels(left: String, center: String, right: String) {
 }
 
 @Composable
-private fun Label(text: String, modifier: Modifier, color: Color = TrekPalette.Text, align: TextAlign = TextAlign.Start) {
+private fun Label(
+    text: String,
+    modifier: Modifier,
+    color: Color = TrekPalette.Text,
+    align: TextAlign = TextAlign.Start,
+) {
     Text(text, color = color, fontSize = LABEL_SP.sp, textAlign = align, modifier = modifier)
 }
 

@@ -24,7 +24,7 @@ internal class SensorActions(private val ctx: TrycorderContext) {
         ctx.say(START_MESSAGES[page] ?: "Sensors OFF")
         val readings = readingsFor(page)
         if (readings != null) readingJob = readings.launchIn(ctx.scope)
-        val started = page != SensorPage.EarthStill && page != SensorPage.StartrekLogo && page != SensorPage.Walkie
+        val started = page !in IDLE_PAGES
         ctx.update {
             it.copy(
                 activeSensor = page.takeIf { started },
@@ -71,21 +71,24 @@ internal class SensorActions(private val ctx: TrycorderContext) {
     private fun readingsFor(page: SensorPage): Flow<*>? {
         val sensors = ctx.services.sensors
         return when (page) {
-            SensorPage.Magnetic -> sensors.magnetic().onEach { v -> ctx.update { it.copy(readings = it.readings.copy(magnetic = v)) } }
+            SensorPage.Magnetic -> sensors.magnetic().onEach { v -> readings { it.copy(magnetic = v) } }
             SensorPage.Orientation -> orientationAndLocation()
-            SensorPage.Gravity -> sensors.acceleration().onEach { v -> ctx.update { it.copy(readings = it.readings.copy(acceleration = v)) } }
-            SensorPage.Temperature -> sensors.environment().onEach { v -> ctx.update { it.copy(readings = it.readings.copy(environment = v)) } }
-            SensorPage.AudioWave -> sensors.audio().onEach { v -> ctx.update { it.copy(readings = it.readings.copy(audio = v)) } }
+            SensorPage.Gravity -> sensors.acceleration().onEach { v -> readings { it.copy(acceleration = v) } }
+            SensorPage.Temperature -> sensors.environment().onEach { v -> readings { it.copy(environment = v) } }
+            SensorPage.AudioWave -> sensors.audio().onEach { v -> readings { it.copy(audio = v) } }
             else -> null
         }
     }
 
+    private fun readings(transform: (SensorReadings) -> SensorReadings) =
+        ctx.update { it.copy(readings = transform(it.readings)) }
+
     private fun orientationAndLocation(): Flow<*> {
         val sensors = ctx.services.sensors
-        ctx.scope.launch {
-            sensors.location().collect { loc -> ctx.update { it.copy(readings = it.readings.copy(location = loc)) } }
-        }.also { locationJob = it }
-        return sensors.orientation().onEach { v -> ctx.update { it.copy(readings = it.readings.copy(orientation = v)) } }
+        locationJob = ctx.scope.launch {
+            sensors.location().collect { loc -> readings { it.copy(location = loc) } }
+        }
+        return sensors.orientation().onEach { v -> readings { it.copy(orientation = v) } }
     }
 
     private var locationJob: Job? = null
@@ -98,13 +101,16 @@ internal class SensorActions(private val ctx: TrycorderContext) {
     fun startMemoryStats(): Job = ctx.scope.launch {
         while (isActive) {
             val memory = ctx.services.systemInfo.memory()
-            ctx.update { it.copy(readings = it.readings.copy(memory = memory)) }
+            readings { it.copy(memory = memory) }
             delay(MEMORY_REFRESH_MS)
         }
     }
 
     private companion object {
         const val MEMORY_REFRESH_MS = 1000L
+
+        /** Pages without a sensor or animation to start. */
+        val IDLE_PAGES = setOf(SensorPage.EarthStill, SensorPage.StartrekLogo, SensorPage.Walkie, SensorPage.Chat)
 
         val START_MESSAGES = mapOf(
             SensorPage.Magnetic to "Sensors Magnetic",

@@ -50,16 +50,24 @@ internal class CommandActions(
         TrekCommand.Intercom to Spec(ButtonGroup.Comm, "intercom", false) { comm(CommStatus.Intercom) },
         TrekCommand.ChatComm to Spec(ButtonGroup.Comm, "chatcomm", false) { comm(CommStatus.Chat) },
         TrekCommand.RaiseShield to Spec(ButtonGroup.Shield, "raise shield", false) {
-            animate(TrekSound.ShieldUp, "Raise Shields", SensorPage.Shields, "Shields Up") { it.copy(shieldMode = 1) }
+            animate(TrekSound.ShieldUp, "Raise Shields", SensorPage.Shields, "Shields Up") {
+                it.copy(shieldMode = 1)
+            }
         },
         TrekCommand.LowerShield to Spec(ButtonGroup.Shield, "lower shield", false) {
-            animate(TrekSound.ShieldDown, "Lower Shields", SensorPage.Shields, "Shields Down") { it.copy(shieldMode = 2) }
+            animate(TrekSound.ShieldDown, "Lower Shields", SensorPage.Shields, "Shields Down") {
+                it.copy(shieldMode = 2)
+            }
         },
         TrekCommand.Phaser to Spec(ButtonGroup.Fire, "phaser", false) {
-            animate(TrekSound.Phaser, "Fire Phaser", SensorPage.Fire, "The target is disabled") { it.copy(fireMode = 2) }
+            animate(TrekSound.Phaser, "Fire Phaser", SensorPage.Fire, "The target is disabled") {
+                it.copy(fireMode = 2)
+            }
         },
         TrekCommand.Torpedo to Spec(ButtonGroup.Fire, "fire", false) {
-            animate(TrekSound.Torpedo, "Fire Torpedo", SensorPage.Fire, "The ship is destroyed") { it.copy(fireMode = 1) }
+            animate(TrekSound.Torpedo, "Fire Torpedo", SensorPage.Fire, "The ship is destroyed") {
+                it.copy(fireMode = 1)
+            }
         },
         TrekCommand.BeamMeUp to Spec(ButtonGroup.Transporter, "beam me up", false) {
             ctx.speakIfChatty("Transport In Progress.")
@@ -100,8 +108,8 @@ internal class CommandActions(
         },
         TrekCommand.ViewerOn to Spec(ButtonGroup.Viewer, "main viewer", true) { viewer.mainViewer() },
         TrekCommand.LocalViewer to Spec(ButtonGroup.Viewer, "local viewer", true) { viewer.localViewer() },
-        TrekCommand.ViewerOff to Spec(ButtonGroup.Viewer, "viewer off", true) { viewer.show(ViewerPage.FederationLogo) },
-        TrekCommand.ViewerPhoto to Spec(ButtonGroup.Viewer, "viewer photo", true) { viewer.show(ViewerPage.Photo) },
+        TrekCommand.ViewerOff to page(ButtonGroup.Viewer, ViewerPage.FederationLogo, "viewer off"),
+        TrekCommand.ViewerPhoto to page(ButtonGroup.Viewer, ViewerPage.Photo, "viewer photo"),
         TrekCommand.SnapPhoto to Spec(ButtonGroup.Viewer, "snap photo", false) { viewer.snap() },
         TrekCommand.LogsConsole to page(ButtonGroup.Logs, ViewerPage.LogsConsole, "logs console"),
         TrekCommand.LogsInfo to page(ButtonGroup.Logs, ViewerPage.LogsInfo, "logs info"),
@@ -118,7 +126,8 @@ internal class CommandActions(
         sensors.start(page)
     }
 
-    private fun page(group: ButtonGroup, page: ViewerPage, echo: String) = Spec(group, echo, true) { viewer.show(page) }
+    private fun page(group: ButtonGroup, page: ViewerPage, echo: String) =
+        Spec(group, echo, true) { viewer.show(page) }
 
     /** Sound, status line, sensor page in a mode, started, optional chatty confirmation. */
     private fun animate(
@@ -160,17 +169,29 @@ internal class CommandActions(
 
     private fun comm(status: CommStatus) {
         ctx.update { it.copy(commStatus = status) }
-        val (spoken, sound, page, message) = when (status) {
-            CommStatus.Hailing -> CommStep("Hailing frequency opened", TrekSound.CommOpen, SensorPage.AudioWave, "Hailing frequency open.")
-            CommStatus.Closed -> CommStep("Hailing frequency closed", TrekSound.CommClose, SensorPage.StartrekLogo, "Hailing frequency closed.")
-            CommStatus.Intercom -> CommStep("Intercom mode ready", TrekSound.KeyOk, SensorPage.Walkie, "Intercom mode ready.")
-            CommStatus.Chat -> CommStep("Chatcomm mode ready", TrekSound.ComputerBeep55, SensorPage.Chat, "Chatcomm mode ready.")
-        }
-        if (ctx.settings.isChatty) ctx.speak(spoken) else ctx.play(sound)
-        sensors.showPage(page)
-        if (status == CommStatus.Hailing) sensors.start(page) else sensors.stop()
-        ctx.say(message)
+        val step = COMM_STEPS.getValue(status)
+        if (ctx.settings.isChatty) ctx.speak(step.spoken) else ctx.play(step.sound)
+        sensors.showPage(step.page)
+        if (status == CommStatus.Hailing) sensors.start(step.page) else sensors.stop()
+        ctx.say(step.message)
     }
 
-    private data class CommStep(val spoken: String, val sound: TrekSound, val page: SensorPage, val message: String)
+    private class CommStep(val spoken: String, val sound: TrekSound, val page: SensorPage, val message: String)
+
+    private companion object {
+        val COMM_STEPS = mapOf(
+            CommStatus.Hailing to CommStep(
+                "Hailing frequency opened", TrekSound.CommOpen, SensorPage.AudioWave, "Hailing frequency open.",
+            ),
+            CommStatus.Closed to CommStep(
+                "Hailing frequency closed", TrekSound.CommClose, SensorPage.StartrekLogo, "Hailing frequency closed.",
+            ),
+            CommStatus.Intercom to CommStep(
+                "Intercom mode ready", TrekSound.KeyOk, SensorPage.Walkie, "Intercom mode ready.",
+            ),
+            CommStatus.Chat to CommStep(
+                "Chatcomm mode ready", TrekSound.ComputerBeep55, SensorPage.Chat, "Chatcomm mode ready.",
+            ),
+        )
+    }
 }
