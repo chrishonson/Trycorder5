@@ -20,8 +20,10 @@ import net.ddns.mlsoftlaberge.trycorder.core.Speaker
 import net.ddns.mlsoftlaberge.trycorder.core.SystemInfo
 import net.ddns.mlsoftlaberge.trycorder.core.TrekLanguage
 import net.ddns.mlsoftlaberge.trycorder.core.TrekSound
-import net.ddns.mlsoftlaberge.trycorder.crew.CrewDirectory
+import net.ddns.mlsoftlaberge.trycorder.crew.FakeCrewDirectory
+import net.ddns.mlsoftlaberge.trycorder.inventory.InMemoryFileAccessor
 import net.ddns.mlsoftlaberge.trycorder.inventory.Inventory
+import net.ddns.mlsoftlaberge.trycorder.inventory.ProductRepository
 import net.ddns.mlsoftlaberge.trycorder.link.LinkEvent
 import net.ddns.mlsoftlaberge.trycorder.link.PeerList
 import net.ddns.mlsoftlaberge.trycorder.link.ServerStats
@@ -165,7 +167,9 @@ class TestServices(
         camera = camera,
         mediaCapture = mediaCapture,
         mediaLibrary = FakeMediaLibrary(),
-        crew = object : CrewDirectory {},
-        inventory = object : Inventory {},
+        crew = FakeCrewDirectory(),
+        inventory = object : Inventory {
+            override val repository = ProductRepository(InMemoryFileAccessor())
+        },
     )
 }
