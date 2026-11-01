@@ -13,13 +13,19 @@ internal class VoiceActions(
     private val viewer: ViewerActions,
     private val commands: CommandActions,
 ) {
+    /** Results are shared by every screen; only act on the ones this screen asked for. */
+    private var awaitingSpeech = false
+
     fun listen() {
+        awaitingSpeech = true
         ctx.update { it.copy(topStatus = "") }
         ctx.services.listener.listen(ctx.state.listenLanguage)
     }
 
     /** understood(): the best sentence of an utterance. */
     fun understood(candidates: List<String>) {
+        if (!awaitingSpeech) return
+        awaitingSpeech = false
         val text = VoiceCommands.pickCandidate(candidates) ?: return
         ctx.update { it.copy(topStatus = text) }
         if (match(text)) {

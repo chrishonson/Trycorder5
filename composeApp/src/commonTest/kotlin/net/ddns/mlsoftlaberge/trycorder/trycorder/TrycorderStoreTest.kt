@@ -95,6 +95,7 @@ class TrycorderStoreTest {
     fun voiceCommandSwitchesGroupAndDoesNotEcho() = runTest {
         val t = TestServices()
         val store = store(t)
+        store.dispatch(TrycorderIntent.Talk)
         t.listener.emit(listOf("fazer", "computer phaser"))
         advanceUntilIdle()
         val s = store.state.value
@@ -111,6 +112,7 @@ class TrycorderStoreTest {
     fun plainSpeechIsSpokenBackAndSent() = runTest {
         val t = TestServices()
         val store = store(t)
+        store.dispatch(TrycorderIntent.Talk)
         t.listener.emit(listOf("hello bridge"))
         advanceUntilIdle()
         // like the original, sendtext() overwrites the status line right after "Understood"
@@ -124,12 +126,23 @@ class TrycorderStoreTest {
     fun frenchSwitchesListenAndSpeakLanguage() = runTest {
         val t = TestServices()
         val store = store(t)
+        store.dispatch(TrycorderIntent.Talk)
         t.listener.emit(listOf("français"))
         advanceUntilIdle()
         assertEquals(TrekLanguage.French, store.state.value.listenLanguage)
         assertEquals("français" to TrekLanguage.French, t.speaker.spoken.last())
         store.dispatch(TrycorderIntent.Talk)
-        assertEquals(1, t.listener.listenCount)
+        assertEquals(2, t.listener.listenCount)
+    }
+
+    @Test
+    fun speechRequestedByAnotherScreenIsIgnored() = runTest {
+        val t = TestServices()
+        val store = store(t)
+        t.listener.emit(listOf("computer phaser"))
+        advanceUntilIdle()
+        assertEquals(ButtonGroup.None, store.state.value.buttonGroup)
+        assertTrue(t.link.sent.isEmpty())
     }
 
     @Test
