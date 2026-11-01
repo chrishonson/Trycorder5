@@ -42,10 +42,27 @@ With this Trycorder, You can do the following:
 The Main Intelligence of the central server can respond to you.
 - And many more to come ...
 
-##Installation
-To install download the APK, and install it by clicking on it after the download (in your Download directory on your phone, using your phone file manager)
- or 
-Download the sources on github and have fun with android studio. (github.org/mlsoft)
+## Build
+
+Trycorder 6 is Kotlin Multiplatform with a Compose Multiplatform UI shared by Android and iOS,
+built on [kmp-agentic-ci-template](https://github.com/chrishonson/kmp-agentic-ci-template).
+The LCARS look, sounds and voice commands are unchanged; the code underneath is new.
+
+```
+composeApp/src/commonMain   shared UI (LCARS components) and MVI stores
+composeApp/src/androidMain  Android services: sensors, camera, speech, network service
+composeApp/src/iosMain      iOS services: CoreMotion, AVFoundation, Speech, Bonjour
+iosApp/                     Xcode project that hosts the shared UI
+tryserver/ tryclient/ trysql/  the C server side, unchanged
+```
+
+Android: `./gradlew :composeApp:assembleDebug`
+
+iOS: open `iosApp/iosApp.xcodeproj` in Xcode and run.
+
+Checks (same as CI): `./gradlew detekt testDebugUnitTest koverVerify`
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the MVI rules.
 
 ##Tested on
  - Samsung Galaxy Nexus (GT-I9250): CyanogenMod 6.0.1, CyanogenMod 5.1.1
