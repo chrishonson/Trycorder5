@@ -1,6 +1,7 @@
 package net.ddns.mlsoftlaberge.trycorder
 
 import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,7 +19,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val services = (application as TrycorderApplication).services
         AndroidActivityHolder.attach(this)
-        permissions.launch(RUNTIME_PERMISSIONS)
+        permissions.launch(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                RUNTIME_PERMISSIONS + Manifest.permission.POST_NOTIFICATIONS
+            } else {
+                RUNTIME_PERMISSIONS
+            },
+        )
         setContent { App(services) }
     }
 

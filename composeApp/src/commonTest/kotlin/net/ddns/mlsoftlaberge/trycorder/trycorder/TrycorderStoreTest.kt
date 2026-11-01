@@ -41,11 +41,14 @@ class TrycorderStoreTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private fun TestScope.store(t: TestServices = TestServices()): TrycorderStore =
-        TrycorderStore(t.services) { navigated += it }.also { advanceUntilIdle() }
+        TrycorderStore(t.services) { navigated += it }.also {
+            it.dispatch(TrycorderIntent.Resume)
+            advanceUntilIdle()
+        }
 
     @Test
     fun initialStateIsReadyWithOwnIp() = runTest {
-        val s = store().state.value
+        val s = TrycorderStore(TestServices().services) {}.state.value
         assertEquals("Ready", s.bottomStatus)
         assertEquals("192.168.0.10", s.peersText)
         assertEquals(SensorPage.EarthStill, s.sensorPage)
@@ -133,6 +136,16 @@ class TrycorderStoreTest {
         assertEquals("français" to TrekLanguage.French, t.speaker.spoken.last())
         store.dispatch(TrycorderIntent.Talk)
         assertEquals(2, t.listener.listenCount)
+    }
+
+    @Test
+    fun linkEventsAreIgnoredWhilePaused() = runTest {
+        val t = TestServices()
+        val store = store(t)
+        store.dispatch(TrycorderIntent.Pause)
+        t.link.eventFlow.emit(LinkEvent.Text("computer phaser"))
+        advanceUntilIdle()
+        assertEquals(ButtonGroup.None, store.state.value.buttonGroup)
     }
 
     @Test

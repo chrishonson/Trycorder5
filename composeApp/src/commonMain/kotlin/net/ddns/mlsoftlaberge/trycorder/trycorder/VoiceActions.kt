@@ -39,7 +39,11 @@ internal class VoiceActions(
         }
     }
 
+    /** Like the original broadcast receiver: link events reach the screen only between resume and pause. */
+    var visible = false
+
     fun onLinkEvent(event: LinkEvent) {
+        if (!visible) return
         when (event) {
             is LinkEvent.PeersChanged -> ctx.update { it.copy(peersText = PeerFormat.format(event.peers)) }
             is LinkEvent.StatsChanged -> with(event.stats) {

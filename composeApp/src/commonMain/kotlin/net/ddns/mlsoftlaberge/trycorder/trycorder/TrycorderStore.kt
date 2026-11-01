@@ -60,8 +60,8 @@ class TrycorderStore(
         when (intent) {
             TrycorderIntent.Start -> lifecycle.startServer()
             TrycorderIntent.Stop -> if (ctx.settings.autoStop) lifecycle.stopServer()
-            TrycorderIntent.Resume -> lifecycle.resume()
-            TrycorderIntent.Pause -> lifecycle.pause()
+            TrycorderIntent.Resume -> lifecycle.resume().also { voice.visible = true }
+            TrycorderIntent.Pause -> lifecycle.pause().also { voice.visible = false }
         }
     }
 
