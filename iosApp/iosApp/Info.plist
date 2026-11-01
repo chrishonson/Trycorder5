@@ -20,6 +20,8 @@
 	<string>The Trycorder listens to voice commands, shows the audio waveform and streams push-to-talk audio.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>The Trycorder recognizes commands such as "computer phaser".</string>
+	<key>NSMotionUsageDescription</key>
+	<string>The temperature sensor page shows the barometric pressure.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>The orientation sensor shows where you are on this planet.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
