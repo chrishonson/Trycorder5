@@ -35,3 +35,6 @@ env/
 .agent_logs/
 .gemini/
 kotlin-js-store/
+
+# Agent worktrees
+.claude/worktrees/
