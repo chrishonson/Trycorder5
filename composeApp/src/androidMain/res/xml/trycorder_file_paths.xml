@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 7-9: Trycorder pictures and videos in the app's own external folders (no storage permission). -->
+<paths>
+    <external-files-path name="trycorder_pictures" path="Pictures/Trycorder/" />
+    <external-files-path name="trycorder_movies" path="Movies/Trycorder/" />
+</paths>
