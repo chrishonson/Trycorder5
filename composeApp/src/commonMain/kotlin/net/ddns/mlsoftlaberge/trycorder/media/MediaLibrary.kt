@@ -11,6 +11,18 @@ interface MediaLibrary {
 
     /** Bytes of a picture, for showing it in the viewer. Null when it cannot be read. */
     suspend fun read(uri: String): ByteArray?
+
+    /**
+     * An upright JPEG of the picture scaled down so its sides are about [size] pixels
+     * (decodeFile(f, size) of the gallery). Null when it cannot be read.
+     */
+    suspend fun thumbnail(uri: String, size: Int): ByteArray? = read(uri)
+
+    /** Opens the system gallery application (GAL button). False when there is none. */
+    fun openGallery(type: MediaType): Boolean = false
+
+    /** Sends a picture or video to another application (SEND button). False when it cannot. */
+    fun share(item: MediaItem): Boolean = false
 }
 
 sealed interface CaptureResult {
